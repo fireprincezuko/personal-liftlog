@@ -57,6 +57,7 @@ input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid 
 svg{width:100%;height:auto;display:block}
 svg text{font-family:"Space Mono",monospace}
 .top{display:flex;justify-content:space-between;align-items:flex-start}
+.qr{display:block;width:100%;max-width:260px;margin:0 auto;image-rendering:pixelated;background:#fff;border-radius:16px}
 #unit{border-radius:999px;font:700 13px var(--mono);margin-top:10px}
 </style>
 </head>
@@ -68,13 +69,14 @@ svg text{font-family:"Space Mono",monospace}
 <button role="tab" data-t="log" aria-selected="true">Log</button>
 <button role="tab" data-t="hist" aria-selected="false">History</button>
 <button role="tab" data-t="prog" aria-selected="false">Progress</button>
+<button role="tab" data-t="pass" aria-selected="false">Pass</button>
 </nav>
 <div id="v"></div>
 </main>
 <script>
-var S={entries:[],unit:"kg"},tab="log",draft={ex:"",date:"",sets:[]},sel="";
+var QR="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQsAAAEGAQAAAABasI0hAAAC2UlEQVR42u2aTa6bSBSFvwtIeNBqe9iDtIzUK8gsM1hKdmLeTnoZGfImWQdWJhlFvBmWeHV6UEAobD+7kyjKT9XEBh2o0r3nnjp1hYkb45hwc0RIhPzEENk0KuAp46EIbgVvaYEO6FwM3Z2QPwF4BcBffywu3syQ15KkDwDkHQD/SJLevzRRFaN7PnYXIM9mtgOUcNpwaIGTmRULyAD0gBMfB/9sP1J9PdHwO0Y3u+stu+xlSCq2PY/FzbU0dyy3i/pyCVK/DHmoZKtb66TVexfV+//oSwZsRlKO6rCZocnIfGkk7NMoQbmkNkb3G0B8FAMv/y8AboYczcwsgWdTm8qK6VZ2VeCjvoSQSbV3yQpi9cqRvC0sUHItR4/aVOFof/aN7xtAvsZWmFnm+exl6NHMAI6zxRHgxkKZ81IDbWBx9DvS277wLU2/FHgHqdSksvJkak1WYPUpCbeJLKyjTj8+6777WtZHS5+fZvBCX5zbHEmqc32+HDh0wNZB7jiM+lJdWcUGmlgB58Z6Qe9mGfCBpgV6B4MbI+4glxpQA97pmKZHypXAF9MkSdxh182V8wpAcmMTgbS2R7Xwd8Mn0ndTdJEcZQ+lBKnU4j3m1l1MwFTTux96V/t+kCo0+Ksj1Mq/2ORj2ErAQWrPLI4kaYCtVMMti1P5CowVMAt7sk7A/L/sgVzNXlKXSpoEXmEdDWMTwU12JzYR7oVkVLslOb0E7SVJjr1nvuRg6zj0NtO7WOwmu0Xw+xjdL4I4Wu8QPeQ0G3yAhwLKY8axwKrr9K5idG+Z2ezKA/VproAQYuJoHI65yIdsdI3Jy0e0mIAVta9CZFb2/tdSkT5bvYa4IGt1dkHgQ+dRbWIF3DL55N7WAGULDwW+Qbk8w4bbAtjSRN6xlccm5UxOB5skgMxNSuBpQ9nKyAfIh4sTdVBNbnWTRHpfF/jQQA6mDtR7Y9/uxUGtxU9BfgXIf1j3eYViVHrVAAAAAElFTkSuQmCC",ID="26RG2982",S={entries:[],unit:"kg",pass:{exp:"2026-11-04"}},tab="log",draft={ex:"",date:"",sets:[]},sel="";
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
-function load(){try{var r=localStorage.getItem("liftlog");if(r){var o=JSON.parse(r);if(o&&o.entries)S=o}}catch(e){}}
+function load(){try{var r=localStorage.getItem("liftlog");if(r){var o=JSON.parse(r);if(o&&o.entries)S=o}}catch(e){}if(!S.pass||!S.pass.exp)S.pass={exp:"2026-11-04"}}
 function save(){try{localStorage.setItem("liftlog",JSON.stringify(S))}catch(e){}}
 function e1rm(w,r){return r<=1?w:w*(1+r/30)}
 function fmt(n){return Math.round(n*10)/10}
@@ -97,7 +99,7 @@ document.getElementById("unit").onchange=function(){S.unit=this.value;save();ren
 function render(){
  document.getElementById("unit").value=S.unit;
  var v=document.getElementById("v");
- if(tab==="log")v.innerHTML=logView();else if(tab==="hist")v.innerHTML=histView();else v.innerHTML=progView();
+ if(tab==="log")v.innerHTML=logView();else if(tab==="hist")v.innerHTML=histView();else if(tab==="pass")v.innerHTML=passView();else v.innerHTML=progView();
  bind();
 }
 function logView(){
@@ -118,6 +120,14 @@ function logView(){
  var t=S.entries.filter(function(e){return e.date===today()});
  if(t.length)h+='<p class="mute">Saved today: '+t.map(function(e){return esc(e.ex)}).join(", ")+'</p>';
  return h;
+}
+function passView(){
+ var exp=S.pass.exp,days=Math.round((new Date(exp+"T00:00")-new Date(today()+"T00:00"))/864e5),gone=days<0;
+ var when=new Date(exp+"T00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+ return'<div class="card" style="text-align:center"><img class="qr" src="'+QR+'" alt="Membership QR code"><p class="mute" style="margin:14px 0 0">'+ID+'</p></div>'+
+ '<div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><span class="mute">Expires</span><b style="font:700 16px/1.6 var(--mono)">'+when+'</b></div>'+
+ '<div class="stat"><span class="mute">'+(gone?"Expired days ago":"Days left")+'</span><b class="'+(gone||days<=7?"pr":"")+'">'+Math.abs(days)+'</b></div></div>'+
+ '<div class="card"><label for="pexp">Expiry date</label><input id="pexp" type="date" value="'+exp+'"><p class="mute" style="margin:10px 0 0">Change this when you renew.</p></div>';
 }
 function backupCard(){
  return'<div class="card"><h2>Backup</h2><p class="mute" style="margin:0 0 12px">Save your workouts as a file on your phone, or load a saved file back in.</p>'+
@@ -222,6 +232,7 @@ function bind(){
    rd.readAsText(f);
   };
  }
+ if(tab==="pass")g("pexp").onchange=function(){if(this.value){S.pass={exp:this.value};save();render()}};
  if(tab==="prog"&&g("sel"))g("sel").onchange=function(){sel=this.value;render()};
 }
 load();render();
